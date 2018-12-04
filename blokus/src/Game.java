@@ -2,14 +2,17 @@
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import javafx.scene.Group;
+import javafx.scene.Scene;
 import javafx.scene.control.Label;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.paint.Color;
 
 /**
  * BlokusGame class
  *
  */
-public class Game {
+public class Game extends Scene {
 
     private final Blokus blokusApp;
     private Piece activePiece;
@@ -19,27 +22,42 @@ public class Game {
     private int piece = (int) (Math.random() * 21);
     private final Color[] Colors = {Color.RED, Color.BLUE, Color.YELLOW, Color.GREEN};
     private int turn = 0;
+    private Label statusLabel;
 
     /**
      * Initialize the game. Selects a random shape to act as the current piece.
      *
-     * @param blokusApp A reference to the application (use to set messages).
-     * @param board A reference to the board on which blocks are drawn
+     *  @param blokusApp A reference to the application (use to set messages).
+     *  @param root The root group that the game belongs to
      */
-    public Game(Blokus blokusApp, Board board, Board inventory) {
+    public Game(Group root, Blokus blokusApp) {
+        super(root);
+
+        this.board = new Board();
+        this.inventory = new Board(0.5);
+        this.blokusApp = blokusApp;
+        this.players = new Player[4];
+
+        statusLabel = new Label("");
+        statusLabel.setTextFill(Color.BLACK);
+
+
+
+        BorderPane layout = new BorderPane();
+        layout.setCenter(board);
+        layout.setTop(statusLabel);
+        layout.setRight(inventory);
+
+        root.getChildren().add(layout);
+
+        //set up event handling
+        setUpKeyPresses();
+        setUpMouseEvents();
 
         //Initializes the game with the piece.
         activePiece = new Piece(board, inventory, Colors[turn], Board.DIM_SQUARES / 2, 2, piece);
 
-        this.board = board;
-        
-        this.inventory = inventory;
-        
-        this.blokusApp = blokusApp;
-        
-        this.players = new Player[4];
-        
-        blokusApp.setMessage("      BLOKUS     |  P1       0  |  P2       0  |  P3       0  |  P4       0  |  ");
+        this.setMessage("      BLOKUS     |  P1       0  |  P2       0  |  P3       0  |  P4       0  |  ");
         
         int i;
         for (i = 0; i < players.length; i++) {
@@ -132,5 +150,64 @@ public class Game {
     		}
     	}
     	
+    }
+
+    /**
+     * Sets up key events for the arrow keys and space bar. All keys send
+     * messages to the game, which should react appropriately.
+     */
+    private void setUpKeyPresses() {
+        board.setOnKeyPressed(e -> {
+            switch (e.getCode()) {
+                case LEFT:
+                    this.rotateLeft();
+                    break;
+                case RIGHT:
+                    this.rotateRight();
+                    break;
+                case DOWN:
+                    break;
+                case UP:
+                    this.mirror();
+                    break;
+                case M:
+                    this.mirror();
+                    break;
+                case SPACE:
+                    this.checkForMove();
+                    break;
+
+            }
+        });
+        board.requestFocus(); // board is focused to receive key input
+
+    }
+
+    /**
+     * Handles the mouse click.
+     */
+    private void setUpMouseEvents() {
+        board.setOnMousePressed(e -> {
+            this.placePiece();
+        });
+        board.setOnMouseMoved(e -> {
+            this.hover(e.getSceneX(), e.getSceneY());
+        });
+        //inventory.setOnMousePressed(e -> {
+        //    this.selectPiece();
+        //});
+        inventory.setOnMouseMoved(e -> {
+            this.hover(e.getSceneX(), e.getSceneY());
+        });
+
+    }
+
+    /**
+     * Changes the message in the status label at the top of the screen.
+     *
+     * @param message
+     */
+    public void setMessage(String message) {
+        statusLabel.setText(message);
     }
 }
